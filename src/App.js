@@ -8,6 +8,7 @@ import Spinner from './Components/Spinner';
 
 function App() {
   const [searchValue, setsearchValue] = useState('')
+  const [searchnotFound, setsearchnotFound] = useState(false)
   const [CurrentWeatherValue, setCurrentWeatherValue] = useState(null)
   const [Loader, setLoader] = useState(false)
 
@@ -18,17 +19,30 @@ function App() {
 
   const fetchData = async () => {
     setLoader(true)
-    let ApiResponse = await fetch(`${WEATHER_API_URL}q=${searchValue ? searchValue : 'Karachi'}&units=metric&appid=${WEATHER_API_KEY}`)
-    let Response = await ApiResponse.json()
-    setCurrentWeatherValue(Response)
-    setLoader(false)
+    try {
+      let ApiResponse = await fetch(`${WEATHER_API_URL}q=${searchValue ? searchValue : 'Karachi'}&units=metric&appid=${WEATHER_API_KEY}`)
+      let Response = await ApiResponse.json()
+      if (Response.message === 'city not found') {
+        setsearchnotFound(true)
+      }
+      else {
+        setsearchnotFound(false)
+        setCurrentWeatherValue(Response)
+      }
+    }
+    catch (error) {
+      console.log(error);
+    }
+    finally {
+      setLoader(false)
+    }
   }
 
   useEffect(() => {
   }, [searchValue])
 
-  const handleSearchOnClick = () => {
-
+  const handleSearchOnClick = (e) => {
+    e.preventDefault()
     fetchData()
     setsearchValue('')
   }
@@ -41,7 +55,7 @@ function App() {
     <>
       <Header />
       <Search handleSearchChange={handleSearchChange} searchValue={searchValue} handleSearchOnClick={handleSearchOnClick} />
-      {Loader?<Spinner/>:<CurrentWeather CurrentWeatherValue={CurrentWeatherValue} />}
+      {Loader ? <Spinner /> : <CurrentWeather CurrentWeatherValue={CurrentWeatherValue} searchnotFound={searchnotFound} />}
     </>
   );
 }
